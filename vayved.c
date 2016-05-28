@@ -30,16 +30,22 @@ typedef enum
 Color currentColor = BLACK;
 
 //bool canBlink = false;
-bool canBlink = true;
-char userInput = '0';
+bool canBlink = false;
+int userInput = 0;
 FILE *red, *blue, *yello;
 
 inline void red_led (bool ledSwitch)
 {
     if (ledSwitch)
+    {
        fwrite("1",1,1,red);
+       fflush(red);
+    }
     else
+    {
        fwrite("0",1,1,red); ; //turn off red
+       fflush(red);
+    }
 }
 
 inline void blue_led (bool ledSwitch)
@@ -114,16 +120,16 @@ int changeColor (Color color)
         switch (currentColor)
         {
         case RED:
-            red_led(on);
+            red_led(off);
             break;
         case ORANGE:
-            yellow_led(on);
+            yellow_led(off);
         case VIOLET:
-            blue_led(on);
-            red_led(on);
+            blue_led(off);
+            red_led(off);
             break;
         case BLUE:
-            blue_led(on);
+            blue_led(off);
             break;
         case BLACK:
             break;
@@ -141,10 +147,10 @@ void* ledBlinkerThread(void *threadId)
        {
            if (canBlink)
             changeColor(RED);
-           sleep(BLINK_DURATION);
+           sleep(1);
            if (canBlink)
            changeColor(BLACK);
-           sleep(BLINK_DURATION);
+           sleep(1);
        }
 }
 
@@ -152,14 +158,15 @@ void* keyboardThread (void* threadId)
 {
     while (true)
     {
-        printf ("\nDo you want the LED to blink BLUE ?? (y/n)");
+        printf ("\nDo you want the LED to blink BLUE ?? (1/0)");
+        //fflush(STDIN);
         scanf("%d",&userInput);
-        if (userInput == 'y')
+        if (userInput == 1)
             canBlink = true;
-        else if (userInput == 'n')
+        else if (userInput == 0)
             canBlink = false;
         else
-            printf ("\nInvalid answer, enter y or n..");
+            printf ("\nInvalid answer, enter 0 or 1..");
     }
 }
 
@@ -169,33 +176,26 @@ int main(int argc, char *argv[])
     int bThread,kThread;
     long t=0;
     red = fopen(red_led_file,"w");
-    ledBlinkerThread(&t);
-//    if (red == -1)
-//    {
-//        printf("Error: Openning device file for RED");
-//        exit (-1);
-//    }
 
-//    bThread = pthread_create(&bThread_t, NULL, ledBlinkerThread, &t);
-//    if (bThread)
-//    {
-//        printf("ERROR; return code from pthread_create() is %d\n", bThread);
-//        exit(-1);
-//    }
+    bThread = pthread_create(&bThread_t, NULL, ledBlinkerThread, &t);
+    if (bThread)
+    {
+        printf("ERROR; return code from pthread_create() is %d\n", bThread);
+        exit(-1);
+    }
 
-    /*
     kThread = pthread_create(&kThread_t, NULL, keyboardThread, &t);
     if (kThread)
     {
         printf("ERROR; return code from pthread_create() is %d\n", kThread);
         exit(-1);
     }
-    */
+
  
     sleep(10);
     /* Last thing that main() should do */
     pthread_join(bThread,NULL);
-    //pthread_join(kThread,NULL);
+    pthread_join(kThread,NULL);
     fclose(red);
     return 0;
 }
