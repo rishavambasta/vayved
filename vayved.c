@@ -3,9 +3,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <unistd.h>
-//#include <sys/types.h>
-//#include <sys/stat.h>
-//#include <fcntl.h>
+
 
 #define BLINK_DURATION 1 // One second of sleep
 
@@ -147,10 +145,10 @@ void* ledBlinkerThread(void *threadId)
        {
            if (canBlink)
             changeColor(RED);
-           sleep(1);
+           usleep(90000);
            if (canBlink)
            changeColor(BLACK);
-           sleep(1);
+           usleep(90000);
        }
 }
 
@@ -192,7 +190,7 @@ int main(int argc, char *argv[])
     }
 
  
-    sleep(10);
+    sleep(100);
     /* Last thing that main() should do */
     pthread_join(bThread,NULL);
     pthread_join(kThread,NULL);
