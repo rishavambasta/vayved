@@ -149,7 +149,7 @@ void changeColor (Color color)
             blue_led(on);
             break;
         case ORANGE:currentColor
-            yellow_led(off);
+                    yellow_led(off);
             blue_led(on);
             red_led(on);
             break;
