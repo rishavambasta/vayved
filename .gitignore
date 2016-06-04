@@ -1,8 +1,5 @@
-vayved.config
-vayved.creator
-vayved.files
-vayved.includes
-vayved.creator.user
-vayved
-vayved.files
-vayved.includes
+*
+
+!.gitignore
+!vayved.c
+!*/
