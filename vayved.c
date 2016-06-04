@@ -320,13 +320,13 @@ void showOffLeds (void)
     int i;
     for (i = 0; i < 3 ; i++)
     {
-        changeColor(RED);\
+        changeColor(RED);
         usleep(90000);
-        changeColor(BLUE);\
+        changeColor(BLUE);
         usleep(90000);
-        changeColor(ORANGE);\
+        changeColor(ORANGE);
         usleep(90000);
-        changeColor(VIOLET);\
+        changeColor(VIOLET);
         usleep(90000);
         changeColor(BLACK);
     }
