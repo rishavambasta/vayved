@@ -1,0 +1,9 @@
+*
+!.gitignore
+!vayved_fsm.c
+!color.c
+!internetChecker.c
+!color.h
+!vayved.h
+!Makefile
+!*/
