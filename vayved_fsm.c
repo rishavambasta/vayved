@@ -28,7 +28,7 @@ Color currentColor = BLACK;
 
 /************************************************/
 /* This is the main thread of execution
-   I realizes a finite state machine of the
+   It realizes a finite state machine of the
   possible states the router can be in         /
 /************************************************/
 
