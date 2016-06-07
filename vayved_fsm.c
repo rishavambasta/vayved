@@ -1,3 +1,8 @@
+/*********************************
+ * Author: Rishav Ambasta
+ * Date  : 07-June-2016
+ * *******************************/
+
 #include <stdio.h>
 #include <unistd.h>
 #include <pthread.h>
@@ -12,9 +17,20 @@
 FSM_STATES current_state = OFFLINE;
 bool canBlink;
 
+//To keep control of the child process
+//and kill it when required
 int pid_of_openVPN_child_process;
 
+//start-off by turning the LED off
 Color currentColor = BLACK;
+
+
+
+/************************************************/
+/* This is the main thread of execution
+   I realizes a finite state machine of the
+  possible states the router can be in         /
+/************************************************/
 
 void* vayved_thread (void* threadId)
 {
@@ -28,7 +44,6 @@ void* vayved_thread (void* threadId)
         case OFFLINE:
           changeColor(RED);
           canBlink = false;
-
           next_state  = TRYING_TO_GO_ONLINE;
           break;
 
@@ -109,13 +124,19 @@ void* vayved_thread (void* threadId)
             }
           break;
         }
+
       sleep(INTER_POLL_DELAY);
+
       current_state = next_state; // Transition of state
     }
   return (void*) NULL;
 }
 
 
+/************************************************
+ * Thread handling the bliking action of LEDs
+ * when applicable
+ * *********************************************/
 void* ledBlinkerThread(void *threadID)  //trivial right now
 {
   Color backupColor;
@@ -138,7 +159,9 @@ void* ledBlinkerThread(void *threadID)  //trivial right now
 
 
 
-
+/*************************************************
+ * SIGNAL handler
+ * ***********************************************/
 void exitSignalHandler (int signum)
 {
   printf ("\nExiting with little housekeeping before we go..\n");
