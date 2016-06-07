@@ -31,10 +31,13 @@ typedef enum
   ONLINE_TUNNELLED
 }FSM_STATES;
 
-FSM_STATES state = OFFLINE;
+FSM_STATES current_state = OFFLINE;
 bool canBlink;
 FILE *red, *blue, *yellow;
 int mutex=0;
+
+
+int dummy_fail_count = 0;
 
 
 const bool on=true;
@@ -103,7 +106,7 @@ inline void yellow_led (bool ledSwitch)
 void changeColor(Color colorToBeUpdated)
 {
   if (mutex > 0)
-    printf ("Non-Atomic");
+    printf ("Atomicity violated");
   ++mutex;
   switch (colorToBeUpdated)
     {
@@ -245,15 +248,18 @@ char* getColorName (int code)
 
 void* vayved_thread (void* threadId)
 {
+  FSM_STATES next_state;
+
+
   while (1)
     {
-      switch (state)
+      switch (current_state)
         {
         case OFFLINE:
           changeColor(RED);
           canBlink = false;
 
-          state  = TRYING_TO_GO_ONLINE;
+          next_state  = TRYING_TO_GO_ONLINE;
           break;
 
 
@@ -263,28 +269,25 @@ void* vayved_thread (void* threadId)
           canBlink = true;
           if (internetConnected())
             if (tunnelExists())
-                state = ONLINE_TUNNELLED;
+              next_state = ONLINE_TUNNELLED;
             else
 
-                state = ONLINE_UNTUNNELLED;
+              next_state = ONLINE_UNTUNNELLED;
           else
-            state = OFFLINE;
+            next_state = OFFLINE;
           break;
 
 
 
         case ONLINE_UNTUNNELLED:
-//          if (VERBOSE)
-//            printf ("\nONLINE_UNTUNNELLED with current LED color=%s",getColorName(currentColor));
-//            fflush (stdout);
+          printf ("\nOnline");
+          fflush(stdout);
           canBlink = false;
           changeColor(BLUE);
-
-//          printf ("\nChaneged color to %s",getColorName(currentColor));
           if (internetConnected())
-            state = TRYING_TO_CREATE_TUNNEL;
+            next_state = TRYING_TO_CREATE_TUNNEL;
           else
-            state = OFFLINE;
+            next_state = OFFLINE;
           break;
 
 
@@ -296,16 +299,16 @@ void* vayved_thread (void* threadId)
 
           if (internetConnected())
             if (tunnelExists())
-              state = ONLINE_TUNNELLED;
+              next_state = ONLINE_TUNNELLED;
             else
               {
                 if (createTunnel() == 1) //Fire OpenVPN Client
-                  state = ONLINE_TUNNELLED;
+                  next_state = ONLINE_TUNNELLED;
                 else
-                  state = ONLINE_UNTUNNELLED;
+                  next_state = ONLINE_UNTUNNELLED;
               }
           else
-            state = OFFLINE;
+            next_state = OFFLINE;
           break;
 
 
@@ -313,24 +316,18 @@ void* vayved_thread (void* threadId)
         case ONLINE_TUNNELLED:
           changeColor(VIOLET);
           canBlink = false;
-          if (VERBOSE)
-            printf ("\nONLINE_TUNNELLED");
-            fflush (stdout);
 
           if (internetConnected())
             if (tunnelExists())
-              state = ONLINE_TUNNELLED;
+              next_state = ONLINE_TUNNELLED;
             else
-              state = ONLINE_UNTUNNELLED;
+              next_state = ONLINE_UNTUNNELLED;
           else
-            state = OFFLINE;
-
+            next_state = OFFLINE;
           break;
-
-
-
         }
       sleep(INTER_POLL_DELAY);
+      current_state = next_state; // Transition of state
     }
   return (void*) NULL;
 }
@@ -341,39 +338,29 @@ void* ledBlinkerThread(void *threadID)  //vestigial right now
   Color backupColor;
   while(true)
     {
+      backupColor = currentColor;
 
       if (canBlink)
         {
-          backupColor = currentColor;
           changeColor(BLACK);
-          usleep(90000);
-          changeColor(backupColor);
-          usleep(90000);
+          //dirty flag on
+          usleep(50000);
+          //dirty flag off
         }
-      else
-        {
-        usleep(90000);
-        usleep(90000);
-        }
-      /*
-      if (canBlink)
-        {
-          backupColor = currentColor;
-          changeColor(currentColor);
-          usleep(90000); //LEDs would have a duty cycle of 50%
-          changeColor(BLACK);
-          usleep(90000);
-          changeColor(backupColor);
-          usleep(90000);
-        } */
+      if (currentColor == BLACK)
+        changeColor(backupColor);
+      usleep(50000);
+
     }
   return (void*) NULL;
 }
 
+
+
+
 void exitSignalHandler (int signum)
 {
   printf ("\nExiting with little housekeeping before we go..\n");
-
   resetLeds();
   fclose(red);
   fclose(blue);
@@ -445,15 +432,25 @@ bool internetConnected ()
 
 bool tunnelExists()
 {
-  return false;
+  if (dummy_fail_count < 2)
+    return false;
+  else
+    return true;
 }
 
 //Return value 1 means created successfully
 //0 means no success
 int createTunnel()
 {
-   sleep(5);
-  return 0; //
+  sleep(1);//no op
+  if (dummy_fail_count < 2)
+    {
+      dummy_fail_count++;
+      return 0;
+    }
+  else
+    {  return 1; //
+    }
 }
 
 void resetLeds ()
@@ -476,7 +473,7 @@ int main ()
   pthread_t vayvedThread_t,bThread_t;
   int vayvedThread,bThread;
 
-  state = OFFLINE;
+  current_state = OFFLINE;
   currentColor = BLACK;
   resetLeds();
 
