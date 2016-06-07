@@ -34,6 +34,8 @@ typedef enum
 FSM_STATES state = OFFLINE;
 bool canBlink;
 FILE *red, *blue, *yellow;
+int mutex=0;
+
 
 const bool on=true;
 const bool off=false;
@@ -100,6 +102,9 @@ inline void yellow_led (bool ledSwitch)
 
 void changeColor(Color colorToBeUpdated)
 {
+  if (mutex > 0)
+    printf ("Non-Atomic");
+  ++mutex;
   switch (colorToBeUpdated)
     {
     case RED:
@@ -214,6 +219,7 @@ void changeColor(Color colorToBeUpdated)
       break;
     }
   currentColor = colorToBeUpdated;
+  --mutex;
 }
 
 char* getColorName (int code)
@@ -241,56 +247,50 @@ void* vayved_thread (void* threadId)
 {
   while (1)
     {
-      printf("\n Color Before = %s",getColorName(currentColor));
-      fflush(stdout);
       switch (state)
         {
         case OFFLINE:
-          if (VERBOSE)
-            printf ("\nOFFLINE");
           changeColor(RED);
           canBlink = false;
 
           state  = TRYING_TO_GO_ONLINE;
           break;
 
+
+
         case TRYING_TO_GO_ONLINE:
-          if (VERBOSE)
-            printf ("\nTRYING_TO_GO_ONLINE");
-          canBlink = true;
           changeColor(BLUE);
-
-
+          canBlink = true;
           if (internetConnected())
             if (tunnelExists())
-              {
-                changeColor(VIOLET);
                 state = ONLINE_TUNNELLED;
-              }
             else
-              {
-                changeColor(BLUE);
+
                 state = ONLINE_UNTUNNELLED;
-              }
           else
             state = OFFLINE;
           break;
 
-        case ONLINE_UNTUNNELLED:
-          if (VERBOSE)
-            printf ("\nONLINE_UNTUNNELLED");
-          changeColor(BLUE);
-          canBlink = false;
 
+
+        case ONLINE_UNTUNNELLED:
+//          if (VERBOSE)
+//            printf ("\nONLINE_UNTUNNELLED with current LED color=%s",getColorName(currentColor));
+//            fflush (stdout);
+          canBlink = false;
+          changeColor(BLUE);
+
+//          printf ("\nChaneged color to %s",getColorName(currentColor));
           if (internetConnected())
             state = TRYING_TO_CREATE_TUNNEL;
           else
             state = OFFLINE;
           break;
 
+
+
+
         case TRYING_TO_CREATE_TUNNEL:
-          if (VERBOSE)
-            printf ("\nTRYING_TO_CREATE_TUNNEL");
           changeColor(VIOLET);
           canBlink = true;
 
@@ -308,11 +308,14 @@ void* vayved_thread (void* threadId)
             state = OFFLINE;
           break;
 
+
+
         case ONLINE_TUNNELLED:
           changeColor(VIOLET);
           canBlink = false;
           if (VERBOSE)
             printf ("\nONLINE_TUNNELLED");
+            fflush (stdout);
 
           if (internetConnected())
             if (tunnelExists())
@@ -323,9 +326,10 @@ void* vayved_thread (void* threadId)
             state = OFFLINE;
 
           break;
+
+
+
         }
-      printf("\n Color After = %s",getColorName(currentColor));
-      fflush(stdout);
       sleep(INTER_POLL_DELAY);
     }
   return (void*) NULL;
@@ -347,7 +351,10 @@ void* ledBlinkerThread(void *threadID)  //vestigial right now
           usleep(90000);
         }
       else
+        {
         usleep(90000);
+        usleep(90000);
+        }
       /*
       if (canBlink)
         {
@@ -366,6 +373,8 @@ void* ledBlinkerThread(void *threadID)  //vestigial right now
 void exitSignalHandler (int signum)
 {
   printf ("\nExiting with little housekeeping before we go..\n");
+
+  resetLeds();
   fclose(red);
   fclose(blue);
   fclose(yellow);
@@ -426,7 +435,7 @@ bool internetConnected ()
         report_error("socket()");
     }
   else
-    report_error("cannot resolve IP for mom Google."); // this is is the most common error.
+    report_error("cannot resolve IP for Google."); // this is is the most common error.
 
   if(sockfd!=-1)
     close(sockfd); // no internet
@@ -439,10 +448,12 @@ bool tunnelExists()
   return false;
 }
 
+//Return value 1 means created successfully
+//0 means no success
 int createTunnel()
 {
-  // sleep(5);
-  return -1;
+   sleep(5);
+  return 0; //
 }
 
 void resetLeds ()
@@ -460,12 +471,13 @@ int main ()
   yellow = fopen(yellow_led_file,"w");
   void *end;
 
-  state = OFFLINE;
-  currentColor = BLACK;
+
 
   pthread_t vayvedThread_t,bThread_t;
   int vayvedThread,bThread;
 
+  state = OFFLINE;
+  currentColor = BLACK;
   resetLeds();
 
   bThread = pthread_create(&bThread_t, NULL,ledBlinkerThread, NULL);
