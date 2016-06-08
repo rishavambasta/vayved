@@ -18,6 +18,9 @@ FILE *red, *blue, *yellow;//Device file pointers
 
 int mutex=0; //debug integer to check atomicity of changeColor();
 
+/***********************************
+ * Functions to Turn ON/OFF the LEDs
+ * **********************************/
 void red_led (bool ledSwitch)
 {
   if (ledSwitch)
@@ -59,10 +62,16 @@ void yellow_led (bool ledSwitch)
       fflush(yellow);//turn off yellow
     }
 }
+/*******************************************/
 
 
 
 
+/***************************************************
+ * Determines the necessary actions to bring up
+ * a required color on the LED, by keeping
+ * previous color in mind. Minimum possible file i/o.
+ * ************************************************/
 void changeColor(Color colorToBeUpdated)
 {
   if (mutex > 0)

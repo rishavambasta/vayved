@@ -23,7 +23,7 @@ typedef enum
 bool internetConnected (void);
 bool tunnelExists (void);
 int  createTunnel(void);
-extern void resetLeds(void);
+void resetLeds(void);
 void terminate_tunnel(void);
 void closeLedDeviceFiles ();
 void openLedDeviceFiles ();

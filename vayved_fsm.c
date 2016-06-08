@@ -173,7 +173,9 @@ void exitSignalHandler (int signum)
 
 
 
-
+/***********************************
+ *  Kill OpenVPN child process
+ * *********************************/
 void terminate_tunnel()
 {
   int retry = 0;
@@ -193,6 +195,9 @@ void terminate_tunnel()
     }
 }
 
+/*****************************************************
+ * Simply check whether interface "tun0" exists or not
+ * **************************************************/
 bool tunnelExists()
 {
   if( access( tun0_device_file, F_OK ) != -1 )
@@ -229,6 +234,7 @@ int createTunnel()
 }
 
 
+//We don't expect any args
 int main ()
 {
 
@@ -259,6 +265,9 @@ int main ()
   signal(SIGINT, exitSignalHandler);
   signal(SIGKILL, exitSignalHandler);
   signal(SIGABRT, exitSignalHandler);
+  //The default action for any Linux process which encounters
+  // SIGPIPE signal due to a broken pipe, is to terminate itself.
+  // We don't want that. We are gonna ignore the signal
   signal(SIGPIPE,SIG_IGN);
 
   /* Last thing that main() should do */

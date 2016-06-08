@@ -1,4 +1,5 @@
-#ifndef COLORS
+#ifndef COLOR_H
+#define COLOR_H
 
 typedef enum
 {
@@ -11,7 +12,4 @@ typedef enum
 
 extern Color currentColor;
 
-#define COLORS
-
 #endif // COLORS
-
