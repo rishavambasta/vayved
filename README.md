@@ -2,7 +2,8 @@
 or Vayve daemon is a service written for playing with the indicator LED of Xiaomi MiWiFi mini router running OpenWRT.
 This basically checks(polls) internet connectivity and if connected, starts openvpn as a child process and creates a VPN tunnel to Vayve's OpenVPN Server.
 <br/>
-In the process, the LED turns RED -> BLINKING BLUE -> BLUE -> BLINKING VIOLET -> VOILET, if everything goes smooth.
+In the process, the LED turns </br>
+RED(offline) -> BLINKING BLUE(polling internet connectivity) -> BLUE(online) -> BLINKING VIOLET(spawning OpenVPN client) -> VOILET(tunnel created), if everything goes smooth.
 <br/>
 This assumes a precompiled openvpn executable and the <b>openvpn</b> configuration named <b>client_SG_Elastic_IP.ovpn</b> both in /root/bin/
 
